@@ -19,6 +19,7 @@ and options are:
 * -d <f> output directory (required)
 * -h     prints usage to stdout; exits (optional)
 * -help  displays verbose help information (optional)
+* -tpl <f> alternative templates to use (optional)
 
 ## Maven dependencies
 
@@ -77,3 +78,14 @@ Macro can be put in categories. To embed a group of macros in a category, use th
 
 <#-- @end -->
 ```
+
+## Custom templates
+
+The generated doco is based on FreeMarker templates. There is a default set of templates provided but you can use your own.
+To do so, use the `-tpl </path/to/tpl/folder` option. The folder must contains the following files:
+* `file.ftl` : Used for a single `.ftl` file documentation.
+* `index.ftl` : Index page (frameset).
+* `index-all-cat.ftl` : Index of categories.
+* `index-all-alpha.ftl` : Alphabetical index.
+* `overview.ftl` : Overview (list of documented `.ftl` libraries).
+* `filelist.ftl` : List of documented `.ftl` files (Left side of the frameset). 

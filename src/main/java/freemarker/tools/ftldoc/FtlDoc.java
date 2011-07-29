@@ -76,13 +76,14 @@ import freemarker.template.Template;
  * Main ftldoc class (includes command line tool).
  * 
  * @author Stephan Mueller <stephan at chaquotay dot net>
- * @version $Id: FtlDoc.java,v 1.1 2003/08/27 12:49:20 stephanmueller Exp $
  */
 public class FtlDoc {
     
+	private static final String EXT_FTL = ".ftl";
+	
     private static final FilenameFilter FTL_FILENAME_FILTER = new FilenameFilter() {
         public boolean accept(File dir, String name)
-            { return name.endsWith(".ftl"); }
+            { return name.endsWith(EXT_FTL); }
     };
     
     private static final Comparator MACRO_COMPARATOR = new Comparator() {
@@ -96,7 +97,19 @@ public class FtlDoc {
     private static final Pattern AT_PATTERN = Pattern.compile("^\\s*(?:--)?\\s*(@\\w+)\\s*(.*)$");
     private static final Pattern TEXT_PATTERN = Pattern.compile("^\\s*(?:--)?(.*)$");
 
-    private static final String FTLDOC_TEMPLATE_PATH = "templates/file.ftl";
+    private static enum Templates {
+    	file("file"),index("index"),indexAllCat("index-all-cat"),
+    	indexAllAlpha("index-all-alpha"), overview("overview"), filelist("filelist");
+    	
+    	private final String fileName;
+    	private Templates(String fileName) {
+			this.fileName = fileName;
+		}
+    	 
+    	public String fileName() {
+    		return fileName + EXT_FTL;
+    	}
+    }
 
     private SortedMap allCategories = null;
     private SortedMap categories = null;
@@ -106,18 +119,20 @@ public class FtlDoc {
     private List fFiles;
     private List fParsedFiles;
     private Set fAllDirectories;
+    private File fAltTemplatesFolder;
     
     List regions = new LinkedList();
     
     private Configuration cfg = null;
     
     
-    public FtlDoc(List files, File outputDir) {
-        cfg = Configuration.getDefaultConfiguration();
+    public FtlDoc(List files, File outputDir, File altTemplatesFolder) {
+        cfg = new Configuration();
         cfg.setWhitespaceStripping(false);
         
         fOutDir = outputDir;
         fFiles = files;
+        fAltTemplatesFolder = altTemplatesFolder;
         
         // extracting parent directories of all files
         fAllDirectories = new HashSet();
@@ -133,13 +148,14 @@ public class FtlDoc {
     public static void main(String[] args) {
         // parse command line args
         FileParam outDirParam = new FileParam("d","output directory",FileParam.NO_ATTRIBUTES, FileParam.REQUIRED);
+        FileParam altTplParam = new FileParam("tpl","alternative templates to use", FileParam.NO_ATTRIBUTES, FileParam.OPTIONAL);
         FileParam filesArg =
             new FileParam("file",
                           "the templates",FileParam.NO_ATTRIBUTES,
                           FileParam.REQUIRED,
                           FileParam.MULTI_VALUED);
         CmdLineHandler cl = new HelpCmdLineHandler("ftldoc help","ftldoc","generates ftldocs",
-                                                   new Parameter[]{outDirParam },
+                                                   new Parameter[]{outDirParam, altTplParam},
                                                    new Parameter[]{filesArg});
         cl.parse(args);
         File outDir = outDirParam.getFile();
@@ -170,7 +186,26 @@ public class FtlDoc {
             };
         }
         
-        FtlDoc ftl = new FtlDoc(files,outDir);
+        File altTpl = null;
+        if (altTplParam.isSet()) {
+	        altTpl = altTplParam.getFile();
+	        if (altTpl.isDirectory() && altTpl.canRead()) {
+	        	// Ensure all the required templates are there
+	        	for (Templates t: Templates.values()) {
+	        		File f = new File(altTpl, t.fileName());
+	        		if (! f.canRead()) {
+	        			System.err.println("Required template '" + f.getAbsolutePath() + "' not found.");
+	        			return;
+	        		}
+	        	}
+	        	System.out.println("Using set of alternative templates from '" + altTpl.getAbsolutePath() + "'");
+	        } else {
+	        	System.err.println("Invalid alternate templates folder '"+altTpl.getAbsolutePath()+"'");
+	        	return;
+	        }
+        }
+        
+        FtlDoc ftl = new FtlDoc(files, outDir, altTpl);
         ftl.run();
     }
     
@@ -268,7 +303,7 @@ public class FtlDoc {
             File htmlFile = new File(fOutDir,file.getName()+".html");
             System.out.println("Generating " + htmlFile.getCanonicalFile() + "...");
             
-            Template t_out = cfg.getTemplate(FTLDOC_TEMPLATE_PATH);
+            Template t_out = cfg.getTemplate(Templates.file.fileName());
             categories = new TreeMap();
             TemplateElement te = null;
             Comment globalComment = null;
@@ -367,7 +402,6 @@ public class FtlDoc {
         try
         {
             
-            
             // init global collections
             allCategories = new TreeMap();
             allMacros = new ArrayList();
@@ -375,17 +409,19 @@ public class FtlDoc {
             
             
             TemplateLoader[] loaders = new TemplateLoader[fAllDirectories.size()+1];
+
             // loader for ftldoc templates
-            loaders[0] = new ClassTemplateLoader(this.getClass());
+            if (fAltTemplatesFolder != null) {
+            	loaders[0] = new FileTemplateLoader(fAltTemplatesFolder);
+            } else {
+            	loaders[0] = new ClassTemplateLoader(this.getClass(), "/default");
+            }
+            
             
             // add loader for every directory
-            Iterator iter3 = fAllDirectories.iterator();
-            int pos = 1;
-            while (iter3.hasNext())
-            {
-                Object element = iter3.next();
-                loaders[pos] = new FileTemplateLoader((File)element);
-                pos++;
+            int i = 1;
+            for (Iterator it = fAllDirectories.iterator(); it.hasNext(); i++) {
+            	loaders[i] = new FileTemplateLoader((File) it.next());
             }
             
             TemplateLoader loader = new MultiTemplateLoader(loaders);
@@ -427,7 +463,7 @@ public class FtlDoc {
             try
             {
                 
-                Template template = cfg.getTemplate("templates/index.ftl");
+                Template template = cfg.getTemplate(Templates.index.fileName());
                 template.process(null,out);
                 
             }
@@ -448,7 +484,7 @@ public class FtlDoc {
             {
                 SimpleHash root = new SimpleHash();
                 root.put("categories", allCategories);
-                Template template = cfg.getTemplate("templates/index-all-cat.ftl");
+                Template template = cfg.getTemplate(Templates.indexAllCat.fileName());
                 template.process(root,out);
                 
             }
@@ -470,7 +506,7 @@ public class FtlDoc {
                 SimpleHash root = new SimpleHash();
                 Collections.sort(allMacros, MACRO_COMPARATOR);
                 root.put("macros", allMacros);
-                Template template = cfg.getTemplate("templates/index-all-alpha.ftl");
+                Template template = cfg.getTemplate(Templates.indexAllAlpha.fileName());
                 template.process(root,out);
                 
             }
@@ -489,7 +525,7 @@ public class FtlDoc {
             Writer out = new FileWriter(new File(fOutDir,"overview.html"));
             try
             {
-                Template template = cfg.getTemplate("templates/overview.ftl");
+                Template template = cfg.getTemplate(Templates.overview.fileName());
                 Map root = new HashMap();
                 root.put("files",fParsedFiles);
                 template.process(root,out);
@@ -522,7 +558,7 @@ public class FtlDoc {
                 SimpleHash root = new SimpleHash();
                 root.put("suffix",suffix);
                 root.put("files",fFiles);
-                Template template = cfg.getTemplate("templates/filelist.ftl");
+                Template template = cfg.getTemplate(Templates.filelist.fileName());
                 template.process(root,out);
                 
             }
