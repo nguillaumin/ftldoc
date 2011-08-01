@@ -79,8 +79,8 @@ import freemarker.template.Template;
  */
 public class FtlDoc {
     
-	private static final String EXT_FTL = ".ftl";
-	
+    private static final String EXT_FTL = ".ftl";
+    
     private static final FilenameFilter FTL_FILENAME_FILTER = new FilenameFilter() {
         public boolean accept(File dir, String name)
             { return name.endsWith(EXT_FTL); }
@@ -98,17 +98,17 @@ public class FtlDoc {
     private static final Pattern TEXT_PATTERN = Pattern.compile("^\\s*(?:--)?(.*)$");
 
     private static enum Templates {
-    	file("file"),index("index"),indexAllCat("index-all-cat"),
-    	indexAllAlpha("index-all-alpha"), overview("overview"), filelist("filelist");
-    	
-    	private final String fileName;
-    	private Templates(String fileName) {
-			this.fileName = fileName;
-		}
-    	 
-    	public String fileName() {
-    		return fileName + EXT_FTL;
-    	}
+        file("file"),index("index"),indexAllCat("index-all-cat"),
+        indexAllAlpha("index-all-alpha"), overview("overview"), filelist("filelist");
+        
+        private final String fileName;
+        private Templates(String fileName) {
+            this.fileName = fileName;
+        }
+         
+        public String fileName() {
+            return fileName + EXT_FTL;
+        }
     }
 
     private SortedMap allCategories = null;
@@ -188,21 +188,21 @@ public class FtlDoc {
         
         File altTpl = null;
         if (altTplParam.isSet()) {
-	        altTpl = altTplParam.getFile();
-	        if (altTpl.isDirectory() && altTpl.canRead()) {
-	        	// Ensure all the required templates are there
-	        	for (Templates t: Templates.values()) {
-	        		File f = new File(altTpl, t.fileName());
-	        		if (! f.canRead()) {
-	        			System.err.println("Required template '" + f.getAbsolutePath() + "' not found.");
-	        			return;
-	        		}
-	        	}
-	        	System.out.println("Using set of alternative templates from '" + altTpl.getAbsolutePath() + "'");
-	        } else {
-	        	System.err.println("Invalid alternate templates folder '"+altTpl.getAbsolutePath()+"'");
-	        	return;
-	        }
+            altTpl = altTplParam.getFile();
+            if (altTpl.isDirectory() && altTpl.canRead()) {
+                // Ensure all the required templates are there
+                for (Templates t: Templates.values()) {
+                    File f = new File(altTpl, t.fileName());
+                    if (! f.canRead()) {
+                        System.err.println("Required template '" + f.getAbsolutePath() + "' not found.");
+                        return;
+                    }
+                }
+                System.out.println("Using set of alternative templates from '" + altTpl.getAbsolutePath() + "'");
+            } else {
+                System.err.println("Invalid alternate templates folder '"+altTpl.getAbsolutePath()+"'");
+                return;
+            }
         }
         
         FtlDoc ftl = new FtlDoc(files, outDir, altTpl);
@@ -412,16 +412,16 @@ public class FtlDoc {
 
             // loader for ftldoc templates
             if (fAltTemplatesFolder != null) {
-            	loaders[0] = new FileTemplateLoader(fAltTemplatesFolder);
+                loaders[0] = new FileTemplateLoader(fAltTemplatesFolder);
             } else {
-            	loaders[0] = new ClassTemplateLoader(this.getClass(), "/default");
+                loaders[0] = new ClassTemplateLoader(this.getClass(), "/default");
             }
             
             
             // add loader for every directory
             int i = 1;
             for (Iterator it = fAllDirectories.iterator(); it.hasNext(); i++) {
-            	loaders[i] = new FileTemplateLoader((File) it.next());
+                loaders[i] = new FileTemplateLoader((File) it.next());
             }
             
             TemplateLoader loader = new MultiTemplateLoader(loaders);
@@ -624,7 +624,13 @@ public class FtlDoc {
             } else if((m = AT_PATTERN.matcher(line)).matches()) {
                 result.put(m.group(1),m.group(2));
             } else if ((m = TEXT_PATTERN.matcher(line)).matches()) {
-                bufText.append(m.group(1));
+                if (line.matches("^\\s+.*$")) {
+                    // Line started with spaces, collapse them
+                    // in a single one
+                    bufText.append(" " + m.group(1));
+                } else {
+                    bufText.append(m.group(1));
+                }
                 bufText.append("\n");
             } else {
                 // one can prove (with some automat theory) that the
