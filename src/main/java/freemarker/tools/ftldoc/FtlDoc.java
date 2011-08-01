@@ -590,6 +590,7 @@ public class FtlDoc {
         result.put("isfunction", new Boolean(macro.isFunction()));
         result.put("type",macro.isFunction()?"function":"macro");
         result.put("arguments",macro.getArgumentNames());
+        result.put("catchall", macro.getCatchAll());
         result.put("node",new TemplateElementModel(macro));
         result.put("filename", file.getName());
         return result;

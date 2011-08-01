@@ -55,6 +55,8 @@ Example:
 <#/macro>
 ```
 
+You can use any `@` tags you want such as `@author`, or `@mytag`. These tags will be parsed and available in the template on the `macro` or `comment` objects (i.e. `macro.@author` ...).
+
 ### Global comment
 
 A global comment for a given `.ftl` file can be written at the top of the file. The first comment found that isn't followed by a `<#macro />` is considered the global comment.
