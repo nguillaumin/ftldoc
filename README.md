@@ -85,6 +85,7 @@ Macro can be put in categories. To embed a group of macros in a category, use th
 
 The generated doco is based on FreeMarker templates. There is a default set of templates provided but you can use your own.
 To do so, use the `-tpl </path/to/tpl/folder` option. The folder must contains the following files:
+
 * `file.ftl` : Used for a single `.ftl` file documentation.
 * `index.ftl` : Index page (frameset).
 * `index-all-cat.ftl` : Index of categories.
