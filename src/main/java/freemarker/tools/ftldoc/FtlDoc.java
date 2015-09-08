@@ -21,7 +21,7 @@
  *    Alternately, this acknowledgement may appear in the software itself,
  *    if and wherever such third-party acknowledgements normally appear.
  *
- * 4. Neither the name "FreeMarker", "Visigoth", nor any of the names of the 
+ * 4. Neither the name "FreeMarker", "Visigoth", nor any of the names of the
  *    project contributors may be used to endorse or promote products derived
  *    from this software without prior written permission. For written
  *    permission, please contact visigoths@visigoths.org.
@@ -48,7 +48,7 @@
  * individuals on behalf of the Visigoth Software Society. For more
  * information on the Visigoth Software Society, please see
  * http://www.visigoths.org/
- */ 
+ */
 
 package freemarker.tools.ftldoc;
 
@@ -61,6 +61,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jcmdline.CmdLineHandler;
+import jcmdline.StringParam;
 import jcmdline.FileParam;
 import jcmdline.HelpCmdLineHandler;
 import jcmdline.Parameter;
@@ -74,18 +75,18 @@ import freemarker.template.Template;
 
 /**
  * Main ftldoc class (includes command line tool).
- * 
+ *
  * @author Stephan Mueller <stephan at chaquotay dot net>
  */
 public class FtlDoc {
-    
+
     private static final String EXT_FTL = ".ftl";
-    
+
     private static final FilenameFilter FTL_FILENAME_FILTER = new FilenameFilter() {
         public boolean accept(File dir, String name)
             { return name.endsWith(EXT_FTL); }
     };
-    
+
     private static final Comparator MACRO_COMPARATOR = new Comparator() {
         public int compare(Object o1, Object o2) {
             return ((Map)o1).get("name").toString().toLowerCase().compareTo(((Map)o2).get("name").toString().toLowerCase());
@@ -100,12 +101,12 @@ public class FtlDoc {
     private static enum Templates {
         file("file"),index("index"),indexAllCat("index-all-cat"),
         indexAllAlpha("index-all-alpha"), overview("overview"), filelist("filelist");
-        
+
         private final String fileName;
         private Templates(String fileName) {
             this.fileName = fileName;
         }
-         
+
         public String fileName() {
             return fileName + EXT_FTL;
         }
@@ -120,20 +121,21 @@ public class FtlDoc {
     private List fParsedFiles;
     private Set fAllDirectories;
     private File fAltTemplatesFolder;
-    
+    private static String extDocs = ".html";
+
     List regions = new LinkedList();
-    
+
     private Configuration cfg = null;
-    
-    
+
+
     public FtlDoc(List files, File outputDir, File altTemplatesFolder) {
         cfg = new Configuration();
         cfg.setWhitespaceStripping(false);
-        
+
         fOutDir = outputDir;
         fFiles = files;
         fAltTemplatesFolder = altTemplatesFolder;
-        
+
         // extracting parent directories of all files
         fAllDirectories = new HashSet();
         Iterator iter = files.iterator();
@@ -142,27 +144,29 @@ public class FtlDoc {
             File f = (File)iter.next();
             fAllDirectories.add(f.getParentFile());
         }
-        
+
     }
-    
+
     public static void main(String[] args) {
         // parse command line args
-        FileParam outDirParam = new FileParam("d","output directory",FileParam.NO_ATTRIBUTES, FileParam.REQUIRED);
-        FileParam altTplParam = new FileParam("tpl","alternative templates to use", FileParam.NO_ATTRIBUTES, FileParam.OPTIONAL);
-        FileParam filesArg =
-            new FileParam("file",
-                          "the templates",FileParam.NO_ATTRIBUTES,
-                          FileParam.REQUIRED,
-                          FileParam.MULTI_VALUED);
+        FileParam outDirParam = new FileParam("d","output directory",FileParam.NO_ATTRIBUTES, FileParam.REQUIRED,FileParam.SINGLE_VALUED);
+        FileParam altTplParam = new FileParam("tpl","alternative templates to use", FileParam.NO_ATTRIBUTES, FileParam.OPTIONAL,FileParam.SINGLE_VALUED);
+        FileParam filesArg = new FileParam("file","the templates",FileParam.NO_ATTRIBUTES, FileParam.REQUIRED,FileParam.MULTI_VALUED);
+        StringParam outExtParam = new StringParam("ext", "the output file extension, defaults to '.html' ", StringParam.OPTIONAL);
         CmdLineHandler cl = new HelpCmdLineHandler("ftldoc help","ftldoc","generates ftldocs",
-                                                   new Parameter[]{outDirParam, altTplParam},
+                                                   new Parameter[]{outDirParam, altTplParam, outExtParam},
                                                    new Parameter[]{filesArg});
         cl.parse(args);
-        File outDir = outDirParam.getFile();
-        
+        File outDir = outDirParam.getValue();
+
+        // override doc file ext is set.
+        if(outExtParam.getValue() != null){
+          extDocs = outExtParam.getValue();
+        }
+
         // collect all files
         List files = new ArrayList();
-        Iterator iter = filesArg.getFiles().iterator();
+        Iterator iter = filesArg.getValues().iterator();
         while (iter.hasNext())
         {
             Object element = iter.next();
@@ -177,7 +181,7 @@ public class FtlDoc {
                 }
             }
         }
-        
+
         // create output directory
         if(!outDir.exists()) {
             if(!outDir.mkdirs()) {
@@ -185,10 +189,10 @@ public class FtlDoc {
                 return;
             };
         }
-        
+
         File altTpl = null;
         if (altTplParam.isSet()) {
-            altTpl = altTplParam.getFile();
+            altTpl = altTplParam.getValue();
             if (altTpl.isDirectory() && altTpl.canRead()) {
                 // Ensure all the required templates are there
                 for (Templates t: Templates.values()) {
@@ -204,12 +208,12 @@ public class FtlDoc {
                 return;
             }
         }
-        
+
         FtlDoc ftl = new FtlDoc(files, outDir, altTpl);
         ftl.run();
     }
-    
-    
+
+
     private void addCategory(String name) {
         if(!categories.containsKey(name)) {
             categories.put(name,new ArrayList());
@@ -218,19 +222,19 @@ public class FtlDoc {
             allCategories.put(name,new ArrayList());
         }
     }
-    
+
     private void createCategoryRegions(Template t) {
         regions = new LinkedList();
-        
+
         TemplateElement te = t.getRootTreeNode();
         Map pc;
         Comment c;
         Comment regionStart = null;
-        
+
         String name = null;
         int begincol = 0;
         int beginline = 0;
-        
+
         Stack nodes = new Stack();
         nodes.push(te);
         while(!nodes.isEmpty()) {
@@ -238,11 +242,11 @@ public class FtlDoc {
             for(int i = te.getChildCount()-1;i>=0;i--) {
                 nodes.push(te.getChildAt(i));
             }
-            
+
             if(te instanceof Comment) {
                 c = (Comment)te;
                 pc = parse(c);
-                
+
                 if(pc.get("@begin")!=null) {
                     if(regionStart!=null) {
                         System.err.println("WARNING: nested @begin-s");
@@ -253,8 +257,8 @@ public class FtlDoc {
                     name = pc.get("@begin").toString().trim();
                     begincol = c.getBeginColumn();
                     beginline = c.getBeginLine();
-                    
-                    
+
+
                     regionStart = c;
                 }
                 if(pc.get("@end")!=null) {
@@ -267,8 +271,8 @@ public class FtlDoc {
                         regionStart = null;
                     }
                 }
-                
-                
+
+
             }
         }
         if(regionStart!=null) {
@@ -278,7 +282,7 @@ public class FtlDoc {
             regions.add(cc);
         }
     }
-    
+
     private void addMacro(Map macro) {
         macros.add(macro);
         allMacros.add(macro);
@@ -297,12 +301,12 @@ public class FtlDoc {
         }
         allCat.add(macro);
     }
-    
+
     private void createFilePage(File file) {
         try {
-            File htmlFile = new File(fOutDir,file.getName()+".html");
+            File htmlFile = new File(fOutDir,file.getName()+ extDocs);
             System.out.println("Generating " + htmlFile.getCanonicalFile() + "...");
-            
+
             Template t_out = cfg.getTemplate(Templates.file.fileName());
             categories = new TreeMap();
             TemplateElement te = null;
@@ -311,9 +315,9 @@ public class FtlDoc {
             macros = new ArrayList();
             Set comments = new HashSet();
             Map ms = t.getMacros();
-            
+
             createCategoryRegions(t);
-            
+
             Iterator macroIter = ms.values().iterator();
             while(macroIter.hasNext()) {
                 Macro macro = (Macro)macroIter.next();
@@ -340,8 +344,8 @@ public class FtlDoc {
                     }
                 }
             }
-            
-            
+
+
             te = t.getRootTreeNode();
             if(te.getClass().getName().endsWith("MixedContent")) {
                 Enumeration children = te.children();
@@ -359,7 +363,7 @@ public class FtlDoc {
                     }
                 }
             }
-            
+
             Collections.sort(macros, MACRO_COMPARATOR);
             List l;
             Iterator iter = categories.values().iterator();
@@ -369,11 +373,11 @@ public class FtlDoc {
                 l = (List)element;
                 Collections.sort(l,MACRO_COMPARATOR);
             }
-            
-            
-            
-            
-            
+
+
+
+
+
             SimpleHash root = new SimpleHash();
             root.put("macros",macros);
             if(null!=globalComment) {
@@ -392,22 +396,22 @@ public class FtlDoc {
             e.printStackTrace();
         }
     }
-    
+
     /**
      * Starts the ftldoc generation.
      *
      */
     public void run() {
-     
+
         try
         {
-            
+
             // init global collections
             allCategories = new TreeMap();
             allMacros = new ArrayList();
             fParsedFiles = new ArrayList();
-            
-            
+
+
             TemplateLoader[] loaders = new TemplateLoader[fAllDirectories.size()+1];
 
             // loader for ftldoc templates
@@ -416,25 +420,25 @@ public class FtlDoc {
             } else {
                 loaders[0] = new ClassTemplateLoader(this.getClass(), "/default");
             }
-            
-            
+
+
             // add loader for every directory
             int i = 1;
             for (Iterator it = fAllDirectories.iterator(); it.hasNext(); i++) {
                 loaders[i] = new FileTemplateLoader((File) it.next());
             }
-            
+
             TemplateLoader loader = new MultiTemplateLoader(loaders);
             cfg.setTemplateLoader(loader);
-            
+
             // create template for file page
-            
-            
+
+
             // create file pages
             for(int n=0;n<fFiles.size();n++) {
                 createFilePage((File)fFiles.get(n));
             }
-            
+
             // sort categories
             List l;
             Iterator iter = allCategories.values().iterator();
@@ -444,63 +448,63 @@ public class FtlDoc {
                 l = (List)element;
                 Collections.sort(l,MACRO_COMPARATOR);
             }
-            
+
             // create the rest
-            createFileListPage(".html");
+            createFileListPage(extDocs);
             createIndexPage();
             createAllCatPage();
             createAllAlphaPage();
             createOverviewPage();
         }
-        
+
         catch (Exception e) {e.printStackTrace();}
     }
-    
+
     private void createIndexPage() {
         try
         {
-            Writer out = new FileWriter(new File(fOutDir,"index.html"));
+            Writer out = new FileWriter(new File(fOutDir,"index" + extDocs ));
             try
             {
-                
+
                 Template template = cfg.getTemplate(Templates.index.fileName());
                 template.process(null,out);
-                
+
             }
             catch (java.io.IOException e) {}
             catch (freemarker.template.TemplateException e) {}
-            
+
             out.flush();
             out.close();
         }
         catch (java.io.IOException e) {}
     }
-    
+
     private void createAllCatPage() {
         try
         {
-            Writer out = new FileWriter(new File(fOutDir,"index-all-cat.html"));
+            Writer out = new FileWriter(new File(fOutDir,"index-all-cat" + extDocs));
             try
             {
                 SimpleHash root = new SimpleHash();
                 root.put("categories", allCategories);
                 Template template = cfg.getTemplate(Templates.indexAllCat.fileName());
                 template.process(root,out);
-                
+
             }
             catch (java.io.IOException e) {}
             catch (freemarker.template.TemplateException e) {}
-            
+
             out.flush();
             out.close();
         }
         catch (java.io.IOException e) {}
     }
-    
+
     private void createAllAlphaPage() {
         try
         {
-            Writer out = new FileWriter(new File(fOutDir,"index-all-alpha.html"));
+            Writer out = new FileWriter(new File(fOutDir,"index-all-alpha" + extDocs));
             try
             {
                 SimpleHash root = new SimpleHash();
@@ -508,51 +512,51 @@ public class FtlDoc {
                 root.put("macros", allMacros);
                 Template template = cfg.getTemplate(Templates.indexAllAlpha.fileName());
                 template.process(root,out);
-                
+
             }
             catch (java.io.IOException e) {}
             catch (freemarker.template.TemplateException e) {}
-            
+
             out.flush();
             out.close();
         }
         catch (java.io.IOException e) {}
     }
-    
+
     private void createOverviewPage() {
         try
         {
-            Writer out = new FileWriter(new File(fOutDir,"overview.html"));
+            Writer out = new FileWriter(new File(fOutDir,"overview" + extDocs));
             try
             {
                 Template template = cfg.getTemplate(Templates.overview.fileName());
                 Map root = new HashMap();
                 root.put("files",fParsedFiles);
                 template.process(root,out);
-                
+
             }
             catch (java.io.IOException e) {}
             catch (freemarker.template.TemplateException e) {}
-            
+
             out.flush();
             out.close();
         }
         catch (java.io.IOException e) {}
     }
-    
+
     private void createFileListPage(String suffix) {
         try
         {
-            Writer out = new FileWriter(new File(fOutDir,"files.html"));
-            
-            
+            Writer out = new FileWriter(new File(fOutDir,"files" + extDocs));
+
+
             Collections.sort(fFiles,
                              new Comparator() {
                         public int compare(Object o1, Object o2) {
                             return ((File)o1).getName().compareTo(((File)o2).getName());
                         }
                     });
-            
+
             try
             {
                 SimpleHash root = new SimpleHash();
@@ -560,29 +564,29 @@ public class FtlDoc {
                 root.put("files",fFiles);
                 Template template = cfg.getTemplate(Templates.filelist.fileName());
                 template.process(root,out);
-                
+
             }
             catch (java.io.IOException e) {}
             catch (freemarker.template.TemplateException e) {}
-            
+
             out.flush();
             out.close();
         }
         catch (java.io.IOException e) {}
     }
-    
+
     private Map createCommentedMacro(Macro macro, Comment comment, File file) {
         Map result = new HashMap();
         if( macro == null ) {
             throw new IllegalArgumentException("macro == null");
         }
-        
+
         CategoryRegion cc = findCategory(macro);
         String cat = null;
         if(cc!=null) {
             cat = cc.toString();
         }
-        
+
         result.putAll(parse(comment));
         result.put("category",cat);
         result.put("name",macro.getName());
@@ -595,18 +599,18 @@ public class FtlDoc {
         result.put("filename", file.getName());
         return result;
     }
-    
+
     private Map parse(Comment comment) {
         Map result = new HashMap();
-        
-        
+
+
         // always return a hash, even if doesn't have any content
         if(null==comment) {
             return result;
         }
-        
+
         SimpleSequence params = new SimpleSequence();
-        
+
         Matcher m;
         // remove leading hyphen (last hyphen of '<#---')
         String fixedComment = comment.getText().substring(1);
@@ -641,7 +645,7 @@ public class FtlDoc {
             }
         }
         String text = bufText.toString().replaceAll("\n","");
-        
+
         result.put("@param",params);
         result.put("comment",text);
         // extract first sentence for "Macro and Function Summary" table
@@ -651,10 +655,10 @@ public class FtlDoc {
         } else {
             result.put("short_comment",text);
         }
-        
+
         return result;
     }
-    
+
     private CategoryRegion findCategory(TemplateElement te) {
         Iterator iter = regions.iterator();
         while (iter.hasNext())
@@ -664,15 +668,15 @@ public class FtlDoc {
         }
         return null;
     }
-    
+
     private class CategoryRegion{
-        
-        String name;        
+
+        String name;
         int begincol;
         int beginline;
         int endcol;
         int endline;
-        
+
         CategoryRegion (String name, int begincol, int beginline,
                         int endcol, int endline) {
             this.name=name;
@@ -681,7 +685,7 @@ public class FtlDoc {
             this.endcol = endcol;
             this.endline = endline;
         }
-        
+
         public boolean contains(TemplateElement te) {
             int bc = te.getBeginColumn();
             int bl = te.getBeginLine();
@@ -691,10 +695,10 @@ public class FtlDoc {
             boolean checkEnd = ((el<endline) || (el==endline && ec < endcol));
             return  (checkStart && checkEnd);
         }
-        
+
         public String toString() {
             return name;
         }
     }
-    
+
 }

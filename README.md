@@ -17,6 +17,7 @@ and options are:
 
 * -?     prints usage to stdout; exits (optional)
 * -d <f> output directory (required)
+* -ext <s> the output file extension, defaults to '.html'  (optional)
 * -h     prints usage to stdout; exits (optional)
 * -help  displays verbose help information (optional)
 * -tpl <f> alternative templates to use (optional)
@@ -44,9 +45,9 @@ Example:
 ```
 <#---
 	Does fancy stuff.
-	
+
 	<p>And does it well !</p>
-	
+
 	@param fist The first parameter.
 	@param second The second parameter, a <code>boolean</code>.
 -->
@@ -91,4 +92,4 @@ To do so, use the `-tpl </path/to/tpl/folder` option. The folder must contains t
 * `index-all-cat.ftl` : Index of categories.
 * `index-all-alpha.ftl` : Alphabetical index.
 * `overview.ftl` : Overview (list of documented `.ftl` libraries).
-* `filelist.ftl` : List of documented `.ftl` files (Left side of the frameset). 
+* `filelist.ftl` : List of documented `.ftl` files (Left side of the frameset).
