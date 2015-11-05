@@ -152,7 +152,7 @@ public class FtlDoc {
         FileParam outDirParam = new FileParam("d","output directory",FileParam.NO_ATTRIBUTES, FileParam.REQUIRED,FileParam.SINGLE_VALUED);
         FileParam altTplParam = new FileParam("tpl","alternative templates to use", FileParam.NO_ATTRIBUTES, FileParam.OPTIONAL,FileParam.SINGLE_VALUED);
         FileParam filesArg = new FileParam("file","the templates",FileParam.NO_ATTRIBUTES, FileParam.REQUIRED,FileParam.MULTI_VALUED);
-        StringParam outExtParam = new StringParam("ext", "the output file extension, defaults to '.html' ", StringParam.OPTIONAL);
+        StringParam outExtParam = new StringParam("ext", "The output file extension. Defaults to '.html' ", StringParam.OPTIONAL);
         CmdLineHandler cl = new HelpCmdLineHandler("ftldoc help","ftldoc","generates ftldocs",
                                                    new Parameter[]{outDirParam, altTplParam, outExtParam},
                                                    new Parameter[]{filesArg});
