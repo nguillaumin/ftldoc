@@ -16,17 +16,17 @@ where:
 and options are:
 
 * -?     prints usage to stdout; exits (optional)
-* -d <f> output directory (required)
-* -ext <s> the output file extension, defaults to '.html'  (optional)
+* -d &lt;f&gt; output directory (required)
+* -ext &lt;s&gt; the output file extension, defaults to '.html'  (optional)
 * -h     prints usage to stdout; exits (optional)
 * -help  displays verbose help information (optional)
-* -tpl <f> alternative templates to use (optional)
+* -tpl &lt;f&gt; alternative templates to use (optional)
 
 ## Maven dependencies
 
-You'll need to install `jcmdline-1.0.1.jar` manually (Available from [here](http://jcmdline.sourceforge.net/)):
+You'll need to install `jcmdline-2.0.0.jar` manually (Available from [here](http://jcmdline.sourceforge.net/)):
 
-`mvn install:install-file -Dfile=jcmdline-1.0.1.jar -DgroupId=jcmdline -DartifactId=jcmdline -Dversion=1.0.1 -Dpackaging=jar`
+`mvn install:install-file -Dfile=jcmdline-2.0.0.jar -DgroupId=jcmdline -DartifactId=jcmdline -Dversion=2.0.0 -Dpackaging=jar`
 
 ## Comment syntax
 
