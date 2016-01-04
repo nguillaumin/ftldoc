@@ -5,6 +5,8 @@ Generates HTML documentation for FTL templates and macros.
 * Original author: [chaquotay](https://github.com/chaquotay/ftldoc)
 * Improvements: [nguillaumin](https://github.com/nguillaumin/ftldoc)
 
+[![Build Status](https://travis-ci.org/nguillaumin/ftldoc.svg)](https://travis-ci.org/nguillaumin/ftldoc)
+
 ## Usage
 
     Usage: java -jar ftldoc.jar <options> file,file...
@@ -23,9 +25,9 @@ and options are:
 
 ## Maven dependencies
 
-You'll need to install `jcmdline-1.0.1.jar` manually (Available from [here](http://jcmdline.sourceforge.net/)):
+You'll need to install `jcmdline-1.0.1.jar` manually (Provided under `lib/` and available from [here](http://jcmdline.sourceforge.net/)):
 
-`mvn install:install-file -Dfile=jcmdline-1.0.1.jar -DgroupId=jcmdline -DartifactId=jcmdline -Dversion=1.0.1 -Dpackaging=jar`
+`mvn install:install-file -Dfile=lib/jcmdline-1.0.1.jar -DgroupId=jcmdline -DartifactId=jcmdline -Dversion=1.0.1 -Dpackaging=jar`
 
 ## Comment syntax
 
